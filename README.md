@@ -139,7 +139,7 @@ The report also notes a Carbonwork **"No fabric"** warning and how many days the
 
 ### 7. LATE flag
 
-A PO is flagged **LATE** when its Zoho delivery date has passed and the goods haven't been received. LATE items still go into Basket 2 when the Carbonwork ETA is more than 7 days away.
+A PO is flagged **LATE** when its Zoho delivery date has passed and the goods haven't been received. The flag shows how late it is and the Zoho delivery date, e.g. `LATE 3d (due 21 Sep)`. LATE items still go into Basket 2 when the Carbonwork ETA is more than 7 days away.
 
 ### 8. PO quantity vs backlog
 
@@ -162,6 +162,13 @@ Products are matched by **name**, not SKU: product line + colour + size.
 - The report checks Carbonwork's **Fabric orders** for fabric arriving within 7 days.
 - If fabric is arriving, it lists the styles that can be made from it (taken from the fabric's Output tab), e.g. 3D2 Chalk → Heavyweight Tee Chalk and Heavyweight Polo Chalk.
 - These are suggestions only.
+
+### 10a. Fabric for switch-OFF items
+
+- For every Basket 2 product, the report finds its fabric: Style Dashboard → the style's **Cost Grid → Linked fabric** (e.g. Bamboo Lounge Pant Pine Green → 8D2 Pine Green).
+- If the product has no style in Carbonwork, it uses the fabric its product line uses, in the product's colour, and says "(by product line)".
+- It then reads that fabric on the **Fabric Dashboard** (Fabric Inventory): kg in house at each location, kg free (in house minus what style POs have reserved or cut), and anything arriving.
+- This shows up on Shantanu's, Kabir & Revathi's and Karan's pages.
 
 ### 11. What the report does not do
 

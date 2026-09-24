@@ -96,6 +96,7 @@ function parseMd(md){
 }
 function kindOf(t){
   t=t.toLowerCase();
+  if(t.includes('fabric for')) return 'offfab';
   if(t.includes('basket 1')||t.includes('switch on')) return 'on';
   if(t.includes('basket 2')||t.includes('switch off')) return 'off';
   if(t.includes('watch')||t.includes('at risk')) return 'watch';
@@ -169,35 +170,6 @@ function renderReport(rec){
 
 /* ---------- Karan's print sheet ---------- */
 const KC = {on:'#1C7C47', off:'#B93A27', warn:'#A26A12', ok:'#42606F', ink:'#141A16', mut:'#5B665F', line:'#D5DBD6', soft:'#EEF1EE'};
-function svgSplit(st){
-  const parts=[['on','Switch ON',KC.on],['off','Switch OFF',KC.off],['watch','Watch',KC.warn],['ok','Correct',KC.ok]];
-  const total = parts.reduce((a,p)=>a+st[p[0]].sizes,0)||1;
-  const W=360, barY=10, barH=22; let x=0, segs='', labels='';
-  parts.forEach(([k,l,c],i)=>{
-    const w = st[k].sizes/total*W;
-    if(w>0){ segs+=`<rect x="${x.toFixed(1)}" y="${barY}" width="${Math.max(w-1.5,0.5).toFixed(1)}" height="${barH}" fill="${c}"/>`;
-      if(w>22) segs+=`<text x="${(x+w/2).toFixed(1)}" y="${barY+15}" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="10" font-weight="600" fill="#fff">${st[k].sizes}</text>`; }
-    x+=w;
-    const lx = i*90;
-    labels += `<rect x="${lx}" y="44" width="8" height="8" fill="${c}"/><text x="${lx+12}" y="51.5" font-size="9" fill="${KC.ink}" font-family="IBM Plex Sans,sans-serif">${l} <tspan fill="${KC.mut}" font-family="IBM Plex Mono,monospace">${st[k].sizes}</tspan></text>`;
-  });
-  return `<svg viewBox="0 0 360 60" role="img" aria-label="Sizes by action"><text x="0" y="6" font-size="8" fill="${KC.mut}" font-family="IBM Plex Mono,monospace">${total} SIZES CHECKED OUT OF STOCK OR LOW</text>${segs}${labels}</svg>`;
-}
-function svgDemand(rows){
-  const data = rows.map(r=>({n:shortName(r.product), v:num(r['sold 30d']), short:num(r.short), late:/late/i.test(r.flag||'')}))
-    .sort((a,b)=>b.v-a.v).slice(0,6).filter(d=>d.v>0);
-  if(!data.length) return `<p style="color:${KC.mut}">No demand behind Basket 2.</p>`;
-  const max = Math.max(...data.map(d=>d.v)); const step = max>50?25:(max>20?10:5); const top=Math.ceil(max/step)*step;
-  const L=168, W=360, bw=W-L-62, rh=16, H=data.length*rh+18;
-  let g='';
-  for(let t=0;t<=top;t+=step){ const x=L+t/top*bw; g+=`<line x1="${x}" x2="${x}" y1="0" y2="${H-14}" stroke="${KC.line}" stroke-width="0.6"/><text x="${x}" y="${H-3}" text-anchor="middle" font-size="7.5" fill="${KC.mut}" font-family="IBM Plex Mono,monospace">${t}</text>`; }
-  data.forEach((d,i)=>{ const y=i*rh+2, w=d.v/top*bw;
-    g+=`<text x="${L-6}" y="${y+10.5}" text-anchor="end" font-size="8.4" fill="${KC.ink}" font-family="IBM Plex Sans,sans-serif">${esc(d.n.length>36?d.n.slice(0,35)+'…':d.n)}</text>`;
-    g+=`<rect x="${L}" y="${y+2}" width="${Math.max(w,1)}" height="11" fill="${KC.off}" opacity="${i<2?1:0.55}"/>`;
-    g+=`<text x="${L+w+4}" y="${y+10.5}" font-size="8" font-weight="600" fill="${KC.ink}" font-family="IBM Plex Mono,monospace">${d.v}${d.short?` <tspan fill="${KC.off}">· ${d.short} short</tspan>`:''}</text>`;
-  });
-  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Units sold in 30 days for products to switch off">${g}</svg>`;
-}
 function shortName(p){ return String(p||'').replace(/^Carbon /,'').replace('Heavyweight Melange T-Shirt','HW Melange Tee').replace('Heavyweight T-Shirt','HW Tee').replace(/^UltraSoft Bamboo /,'Bamboo ').replace(/ \((.+)\)$/,' · $1'); }
 function parseEta(s, year){ const m=String(s||'').match(/(\d{1,2})\s+([A-Za-z]{3})/); if(!m) return null; const mo=MON[m[2].toLowerCase()]; return mo==null?null:new Date(year,mo,+m[1]); }
 function svgTimeline(rep, st){
@@ -241,20 +213,11 @@ function renderSheet(rec){
   let h=`<div class="sheet">
   <div class="k-mast"><div class="l"><span class="k-eyebrow">Carbontree · Shopify continue-selling check</span><h1>Daily stock report</h1></div>
   <div class="r"><b>${isNaN(d)?esc(rep.date||''):d.toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}</b>Window ${esc(rep.front.window||'next 7 days')}</div></div>
-  <p class="k-lede"><em class="on">${plural(st.on.products,'product')}</em> to switch ON, <em class="off">${plural(st.off.products,'product')}</em> to switch OFF${st.short?` (<em class="off">${st.short} orders</em> already can't ship)`:''}, and <em class="warn">${st.watch.products}</em> at risk of missing their PO date.</p>
-  <div class="k-kpis">
-    <div class="k-kpi" style="--c:${KC.on}"><span class="n">${st.on.sizes}</span><span class="t">Sizes to switch ON</span><span class="s">Sold out, stock lands within 7 days</span></div>
-    <div class="k-kpi" style="--c:${KC.off}"><span class="n">${st.off.sizes}</span><span class="t">Sizes to switch OFF</span><span class="s">Selling with no stock due${st.lateCount?` · ${st.lateCount} late POs`:''}</span></div>
-    <div class="k-kpi" style="--c:${KC.warn}"><span class="n">${st.watch.sizes}</span><span class="t">Sizes to watch</span><span class="s">PO due, unlikely to arrive</span></div>
-    <div class="k-kpi" style="--c:${KC.off}"><span class="n">${st.short}</span><span class="t">Orders short</span><span class="s">Paid, no stock, no PO in 7 days</span></div>
-  </div>
-  <div class="k-row">
-    <div class="k-box"><div class="k-h">Where the low-stock sizes stand <span>SIZES</span></div>${svgSplit(st)}</div>
-    <div class="k-box"><div class="k-h">Demand behind "switch OFF" <span>UNITS SOLD · 30 DAYS</span></div>${svgDemand(st.off.rows)}</div>
-  </div>
   <div class="k-box"><div class="k-h">Style POs due in the next 7 days <span>CARBONWORK ETA · STAGE</span></div>${svgTimeline(rep,st)}</div>`;
   if(st.on.rows.length) h+=`<div class="k-sec"><div class="k-h">Switch ON <span>${plural(st.on.sizes,'size')}</span></div><table class="k-t"><thead><tr><th>Product</th><th>Sizes · stock</th><th>PO</th><th>ETA</th><th>Stage</th><th>Qty</th></tr></thead><tbody>${st.on.rows.map(r=>`<tr><td class="p">${esc(r.product)}</td><td class="n">${kSizes(r)}</td><td>${esc(r.po)}</td><td class="n">${esc(r.eta)}</td><td>${kTags(r.likely||r.stage)}</td><td class="n">${esc(r['po qty']||'')}</td></tr>`).join('')}</tbody></table></div>`;
   if(st.off.rows.length) h+=`<div class="k-sec"><div class="k-h">Switch OFF <span>${plural(st.off.sizes,'size')} · sorted by demand</span></div><table class="k-t"><thead><tr><th>Product</th><th>Sizes · stock</th><th>Sold 30d</th><th>Short</th><th>Next PO</th><th>Flag</th></tr></thead><tbody>${offMain.map(r=>`<tr><td class="p">${esc(r.product)}</td><td class="n">${kSizes(r)}</td><td class="n">${esc(r['sold 30d'])}</td><td class="n${num(r.short)>0?' k-neg':''}">${esc(r.short)}</td><td>${esc(r['next po'])}</td><td>${kTags(r.flag)}</td></tr>`).join('')}</tbody></table>${offRest.length?`<div class="k-more">+ ${plural(offRest.length,'more product')} (${restSizes} sizes) with under 3 sales in 30 days and no PO: ${offRest.map(r=>esc(r.product.replace(/ \(.*/,''))).filter((v,i,a)=>a.indexOf(v)===i).join(', ')}.</div>`:''}</div>`;
+  const ff=sec('offfab'); const fr=(ff?.blocks||[]).filter(b=>b.type==='table').flatMap(b=>b.rows);
+  if(fr.length) h+=`<div class="k-sec"><div class="k-h">Fabric for switch-OFF items <span>CARBONWORK FABRIC DASHBOARD</span></div><table class="k-t"><thead><tr><th>Product</th><th>Fabric</th><th>Free now</th><th>In house by location</th><th>Arriving</th></tr></thead><tbody>${fr.map(r=>`<tr><td class="p">${esc(r.product)}</td><td>${esc(r.fabric)}</td><td class="n${/short/i.test(r['free now']||'')?' k-neg':''}">${esc(r['free now'])}</td><td>${esc(r['in house by location'])}</td><td>${esc(r.arriving)}</td></tr>`).join('')}</tbody></table></div>`;
   if(st.watch.rows.length) h+=`<div class="k-sec"><div class="k-h">Watch <span>PO due but at risk</span></div><table class="k-t"><thead><tr><th>Product</th><th>Sizes · stock</th><th>PO</th><th>ETA</th><th>Stage</th><th>Risk</th></tr></thead><tbody>${st.watch.rows.map(r=>`<tr><td class="p">${esc(r.product)}</td><td class="n">${kSizes(r)}</td><td>${esc(r.po)}</td><td class="n">${esc(r.eta)}</td><td>${kTags(r.stage)}</td><td>${inline(r.risk||'')}</td></tr>`).join('')}</tbody></table></div>`;
   h+=`<div class="k-foot">Sources: ${esc(rep.front.sources||'Shopify, Zoho, Carbonwork')} · ${st.ok.products} products already set correctly.</div>
   </div>`;

@@ -12,6 +12,12 @@ Inputs (all in one folder, default ./raw):
   zoho_pos.json             optional: Zoho list_purchase_orders result, for LATE flags (delivery_date per PO number)
   carbonwork_styles.json    [{name, po, vendor, eta, orig, step, slip, nofabric}]  from the Style Dashboard
   carbonwork_fabric.json    optional: [{fabric, colour, po, eta, stage, kg_left}]  from PO Tracker fabric orders
+  carbonwork_style_links.json  optional: [[style name, po, style id], ...]  links on the Style Dashboard
+  style_fabric.json         optional: {style id: [[fabric, colour], ...]}  "Linked fabric" on each style's Cost Grid
+  fabric_stock.json         optional: [{fabric, colour, found, free, in_house, reserved, on_order, incoming, locations}]
+                            from the Fabric Dashboard (fabric-po-dashboard), one per fabric the switch-OFF items use
+
+The summary lists need_style_pages / need_fabric_stock: what to read from Carbonwork before the final build.
 
 Usage:
   python3 build_report.py --raw ./raw --date 2026-09-24 --seq 1 --out ./out
@@ -113,6 +119,9 @@ def parse_day(s, year):
     except Exception: return None
 
 ABBR = {'HWT': 'Carbon Heavyweight T-shirt – Sorona™', 'HWP': 'Heavyweight Polo – Sorona™'}
+# Fallback fabric per product line, used only when no Carbonwork style of that product has a linked fabric.
+# (Learned from Cost Grid links, 24 Sep 2026.) Colour = the product's colour.
+FAMILY_FABRIC = {'BT': '8D2', 'BLP': '8D2', 'WBT': '8D2', 'HWT': '3D2', 'JKT-M': '12'}
 # Which styles each fabric feeds (from Carbonwork's fabric Output tab). Extend as you learn more.
 FABRIC_STYLES = {'3D2': 'Heavyweight Tee, Heavyweight Polo'}
 
@@ -139,6 +148,16 @@ def load_styles(p, colours, year):
                         nofabric=bool(c.get('nofabric'))))
     return out, unmatched
 
+def load_style_links(p, colours):
+    """[[name, po, id], ...] -> [(fam, colour_lower, po, id)]"""
+    out = []; cols = sorted(colours, key=len, reverse=True)
+    for row in load_json(p, []):
+        name, po, sid = (list(row) + [None] * 3)[:3]
+        name = re.sub(r'\s+', ' ', name or '').strip()
+        f = fam(name); colour = next((k for k in cols if name.lower().endswith(k.lower())), None)
+        if f and colour and sid: out.append((f, colour.lower(), str(po or '').replace('CT26/PO/', ''), sid))
+    return out
+
 def load_fabric(p):
     """Carbonwork fabric order cards: objects {fabric, po, colour, stage, eta, late} or rows [fabric, po, colour, stage, eta, late]."""
     out = []
@@ -158,6 +177,9 @@ def build(raw, date, seq):
     styles, unmatched_styles = load_styles(os.path.join(raw, 'carbonwork_styles.json'), colours, today.year)
     fabric = load_fabric(os.path.join(raw, 'carbonwork_fabric.json'))
     zoho_pos_with_lines = {k[0] for k in zq}
+    style_links = load_style_links(os.path.join(raw, 'carbonwork_style_links.json'), colours)
+    style_fabric = load_json(os.path.join(raw, 'style_fabric.json'), {}) or {}
+    fabric_stock = {(x['fabric'], x['colour'].lower()): x for x in load_json(os.path.join(raw, 'fabric_stock.json'), []) or []}
 
     skipped = defaultdict(set); checked = 0; low = []
     for v in variants:
@@ -202,7 +224,8 @@ def build(raw, date, seq):
         zd = zdates.get(nxt['po'], '')
         is_late = bool(zd) and zd < date
         lbl = f"PO/{nxt['po']} · {nxt['eta'].strftime('%-d %b')} · {nxt['step']}"
-        return lbl, (f"LATE {(today - dt.date.fromisoformat(zd)).days}d" if is_late else 'LATER')
+        zdd = dt.date.fromisoformat(zd) if zd else None
+        return lbl, (f"LATE {(today - zdd).days}d (due {zdd.strftime('%-d %b')})" if is_late else 'LATER')
 
     rows = {k: [] for k in groups}
     for k, g in groups.items():
@@ -220,6 +243,45 @@ def build(raw, date, seq):
                                                         f"already {s['slip']} days behind" if s['slip'] else '', 'Carbonwork shows "No fabric"' if s['nofabric'] else ''])))
             rows[k].append(base)
     rows['off'].sort(key=lambda r: (-r['u30'], -r['short']))
+
+    # ---- fabric behind each switch-OFF product (Style Dashboard link -> Cost Grid "Linked fabric" -> Fabric Dashboard)
+    need_pages, need_stock, fab_rows = [], [], []
+    fam_learned = defaultdict(set)
+    for f_, c_, po_, sid in style_links:
+        for fb, fc in style_fabric.get(sid, []): fam_learned[f_].add(fb)
+    for prod in groups['off']:
+        base, colour, _ = split_name(prod); f = fam(base)
+        sids = [sid for (f_, c_, po_, sid) in style_links if f_ == f and c_ == colour.lower()]
+        missing = [sid for sid in sids if sid not in style_fabric]
+        need_pages += [dict(product=prod, style_id=sid, url=f'https://www.carbonwork.in/style/{sid}') for sid in missing]
+        fabs, how = [], 'linked'
+        for sid in sids:
+            for fb, fc in style_fabric.get(sid, []):
+                if [fb, fc] not in fabs: fabs.append([fb, fc])
+        if not fabs and not missing:
+            fb = sorted(fam_learned.get(f, []))[0] if fam_learned.get(f) else FAMILY_FABRIC.get(f)
+            if fb: fabs, how = [[fb, colour]], 'by product line'
+        for fb, fc in fabs:
+            st = fabric_stock.get((fb, fc.lower()))
+            if st is None:
+                if [fb, fc] not in need_stock: need_stock.append([fb, fc])
+                continue
+            fab_rows.append(dict(product=short_product(prod), fabric=f"{fb} {fc}", how=how, st=st))
+        if not fabs and not missing:
+            fab_rows.append(dict(product=short_product(prod), fabric='', how='none', st=None))
+    order_off = [r['product'] for r in rows['off']]
+    fab_rows.sort(key=lambda r: order_off.index(r['product']) if r['product'] in order_off else 99)
+    def kg(x): return f"{x:,.0f} kg" if abs(x) >= 10 or x == 0 else f"{x:,.1f} kg"
+    def fab_cells(r):
+        st = r['st']
+        if not st: return ['Not linked in Carbonwork', '—', '—', '—']
+        if not st.get('found'): return [r['fabric'], 'Not on the Fabric Dashboard', '—', '—']
+        locs = [l for l in st.get('locations', []) if (l.get('here') or 0) > 0 or (l.get('free') or 0) > 0]
+        where = '; '.join(f"{l['location']} {kg(l['here'])} ({kg(l['free'])} free)" for l in locs) or 'None in house'
+        inc = '; '.join(f"{i['kg']:,.0f} kg to {i['location']} · {i['eta']}" for i in st.get('incoming', [])) or '—'
+        free = st.get('free', 0)
+        return [r['fabric'] + (' (by product line)' if r['how'] == 'by product line' else ''),
+                kg(free) if free >= 0 else f"{kg(-free)} short", where, inc]
 
     count = lambda k: (len(rows[k]), sum(len(r['sizes'].split(', ')) for r in rows[k]))
     stats = {k: count(k) for k in rows}; short_total = sum(r['short'] for r in rows['off'])
@@ -251,6 +313,14 @@ def build(raw, date, seq):
         A('')
     table('Basket 1 — switch ON', ['Product','Sizes','Stock','PO','ETA','Stage','Likely','PO qty'], ['product','sizes','stock','po','eta','stage','likely','qty'], rows['on'])
     table('Basket 2 — switch OFF', ['Product','Sizes','Stock','Sold 30d','Short','Next PO','Flag'], ['product','sizes','stock','u30','short','next_po','flag'], rows['off'])
+    A('## Fabric for switch-OFF items'); A('')
+    if not rows['off']: A('None today.')
+    elif not fab_rows: A('Fabric stock not read today.')
+    else:
+        A('| Product | Fabric | Free now | In house by location | Arriving |'); A('|---|---|---|---|---|')
+        for r in fab_rows: A('| ' + ' | '.join([r['product']] + [c.replace('|', '/') for c in fab_cells(r)]) + ' |')
+        A(''); A('Free = in house minus what style POs have already reserved or cut (Carbonwork Fabric Dashboard).')
+    A('')
     table('Watch — PO due but at risk', ['Product','Sizes','Stock','PO','ETA','Stage','Likely','Risk'], ['product','sizes','stock','po','eta','stage','likely','risk'], rows['watch'])
     for r in rows['ok']: r['note'] = f"{r['qty']} pcs; {r['cover']}"
     table('Correctly set — no action', ['Product','Sizes','Stock','PO','ETA','Stage','Likely','Note'], ['product','sizes','stock','po','eta','stage','likely','note'], rows['ok'])
@@ -274,7 +344,9 @@ def build(raw, date, seq):
     md = '\n'.join(L)
     summary = dict(code=code, date=date, checked=checked, low=len(low), skipped_products=skip_prod,
                    on=stats['on'], off=stats['off'], watch=stats['watch'], ok=stats['ok'], short=short_total,
-                   unmatched_styles=sorted(set(unmatched_styles)))
+                   unmatched_styles=sorted(set(unmatched_styles)),
+                   need_style_pages=need_pages, need_fabric_stock=need_stock,
+                   fabric_rows=[dict(product=r['product'], fabric=r['fabric'], how=r['how']) for r in fab_rows])
     return md, summary
 
 def main():
