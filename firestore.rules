@@ -4,10 +4,11 @@ rules_version = '2';
 // Stock Desk — Firestore security rules
 //
 //   shantanu@carbontree.com  owner:  read, upload reports, delete own reports, notes
-//   kabir@carbontree.com     member: read reports, add/edit own notes
+//   kabir@carbontree.com     member: read reports, add/edit own notes (Kabir & Revathi page)
+//   revathi@carbontree.com   member: same as Kabir
 //   anyone else              no access (the app tells them to speak to Shantanu)
 //
-// Keep the two emails in sync with lib/roles.ts. These rules are what protect the
+// Keep these emails in sync with lib/roles.ts. These rules are what protect the
 // data; the app only hides screens.
 //
 // Data:
@@ -27,7 +28,7 @@ service cloud.firestore {
     }
     function email()    { return request.auth.token.email.lower(); }
     function isOwner()  { return signedInEmail() && email() == 'shantanu@carbontree.com'; }
-    function isMember() { return signedInEmail() && email() in ['shantanu@carbontree.com', 'kabir@carbontree.com']; }
+    function isMember() { return signedInEmail() && email() in ['shantanu@carbontree.com', 'kabir@carbontree.com', 'revathi@carbontree.com']; }
 
     function pad2(n) { return n < 10 ? '0' + string(n) : string(n); }
     function counterPath(day) { return /databases/$(database)/documents/counters/$(day); }

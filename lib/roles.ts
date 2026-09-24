@@ -13,6 +13,7 @@ export const OWNER_EMAIL = 'shantanu@carbontree.com';
 const ROLES: Record<string, Role> = {
   'shantanu@carbontree.com': { views: ['shantanu', 'karan'], canUpload: true, canConsolidate: true, canDelete: true },
   'kabir@carbontree.com': { views: ['kabir'], canUpload: false, canConsolidate: false, canDelete: false },
+  'revathi@carbontree.com': { views: ['kabir'], canUpload: false, canConsolidate: false, canDelete: false },
 };
 
 /** null = signed in with a company account that has no Stock Desk access. */

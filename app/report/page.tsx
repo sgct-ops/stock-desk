@@ -14,7 +14,7 @@ import type { Report } from '@/lib/types';
 import type { View } from '@/lib/roles';
 const ALL_VIEWS: { id: View; name: string; sub: string }[] = [
   { id: 'shantanu', name: 'Shantanu', sub: 'Review & notes' },
-  { id: 'kabir', name: 'Kabir', sub: 'Review & notes' },
+  { id: 'kabir', name: 'Kabir & Revathi', sub: 'Review & notes' },
   { id: 'karan', name: 'Karan', sub: 'Print summary' },
 ];
 

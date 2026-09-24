@@ -20,6 +20,7 @@ async function t(name: string, fn: () => Promise<unknown>) { await fn(); results
   env = await initializeTestEnvironment({ projectId: 'stock-desk-rules-test', firestore: { rules: readFileSync('firestore.rules', 'utf8') } });
   const owner = env.authenticatedContext('u_shantanu', google('shantanu@carbontree.com')).firestore();
   const kabir = env.authenticatedContext('u_kabir', google('Kabir@carbontree.com')).firestore();
+  const revathi = env.authenticatedContext('u_revathi', google('Revathi@carbontree.com')).firestore();
   const other = env.authenticatedContext('u_other', google('priyanka@carbontree.com')).firestore();
   const unverified = env.authenticatedContext('u_fake', google('shantanu@carbontree.com', false)).firestore();
   const anon = env.unauthenticatedContext().firestore();
@@ -46,6 +47,9 @@ async function t(name: string, fn: () => Promise<unknown>) { await fn(); results
   await t('reports cannot be edited', () => assertFails(owner.doc('reports/240926-01').update({ title: 'changed' })));
 
   await t('Kabir can read reports (email case ignored)', () => assertSucceeds(kabir.doc('reports/240926-01').get()));
+  await t('Revathi can read reports (email case ignored)', () => assertSucceeds(revathi.doc('reports/240926-01').get()));
+  await t('Revathi cannot upload', () => assertFails(upload(revathi, '260926-01', '2026-09-26', 1, { next: 2 }, 'u_revathi', 'revathi@carbontree.com')));
+  await t('Revathi cannot delete', () => assertFails(revathi.doc('reports/240926-02').delete()));
   await t('Kabir cannot upload', () => assertFails(upload(kabir, '260926-01', '2026-09-26', 1, { next: 2 }, 'u_kabir', 'kabir@carbontree.com')));
   await t('Kabir cannot read counters', () => assertFails(kabir.doc('counters/240926').get()));
   await t('Kabir cannot delete', () => assertFails(kabir.doc('reports/240926-02').delete()));
@@ -56,6 +60,7 @@ async function t(name: string, fn: () => Promise<unknown>) { await fn(); results
 
   const note = (uid: string, name: string, email: string) => ({ text: 'Chicory M switched off', at: ts(), by: { uid, name, email } });
   await t('Kabir adds a note', () => assertSucceeds(kabir.doc('reports/240926-01/notes/n1').set(note('u_kabir', 'Kabir', 'kabir@carbontree.com'))));
+  await t('Revathi adds a note', () => assertSucceeds(revathi.doc('reports/240926-01/notes/r1').set(note('u_revathi', 'Revathi', 'revathi@carbontree.com'))));
   await t('Shantanu adds a note', () => assertSucceeds(owner.doc('reports/240926-01/notes/n2').set(note('u_shantanu', 'Shantanu', 'shantanu@carbontree.com'))));
   await t('note on a missing report is refused', () => assertFails(kabir.doc('reports/999999-01/notes/n3').set(note('u_kabir', 'Kabir', 'kabir@carbontree.com'))));
   await t('note posing as someone else is refused', () => assertFails(kabir.doc('reports/240926-01/notes/n4').set(note('u_shantanu', 'Shantanu', 'shantanu@carbontree.com'))));

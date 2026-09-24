@@ -1,7 +1,7 @@
 'use client';
 /* Sync: refreshes every open Stock Desk page from Firestore.
  *  - automatically when the page opens and every 6 hours after (also on return to the tab if 6 h have passed);
- *  - when anyone presses Sync: it writes sync/state, and every open page (Shantanu's, Kabir's) refreshes too. */
+ *  - when anyone presses Sync: it writes sync/state, and every open page (Shantanu's, Kabir's, Revathi's) refreshes too. */
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { doc, onSnapshot, serverTimestamp, setDoc, Timestamp } from 'firebase/firestore';
 import { fbDb } from '@/lib/firebase';

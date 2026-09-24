@@ -14,7 +14,7 @@ export default function Notes({ code }: { code: string }) {
   return (
     <aside className="notes">
       <h3>Notes on {code}</h3>
-      <div className="sub">Shared between Shantanu and Kabir through the day.</div>
+      <div className="sub">Shared between Shantanu, Kabir and Revathi through the day.</div>
       <div className="note-list">
         {notes.length ? notes.map((n) => (
           <div className="note" key={n.id}>

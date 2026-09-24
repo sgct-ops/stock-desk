@@ -38,7 +38,7 @@ export const SHEET_CSS = `
 .k-tag{font:600 6.6pt/1 "IBM Plex Mono",monospace;letter-spacing:.04em;padding:.7mm 1.3mm;border-radius:.8mm;border:.6pt solid currentColor;white-space:nowrap;display:inline-block}
 .k-tag.on{color:var(--k-on)} .k-tag.off{color:var(--k-off)} .k-tag.warn{color:var(--k-warn)} .k-tag.mut{color:var(--k-mut)}
 .k-more{font-size:7.4pt;color:var(--k-mut);padding:1mm 1.6mm}
-.k-foot{margin-top:auto;display:grid;grid-template-columns:1.3fr 1fr;gap:5mm;border-top:.6pt solid var(--k-line);padding-top:2mm;font-size:7.4pt;color:var(--k-mut)}
+.k-foot{margin-top:auto;border-top:.6pt solid var(--k-line);padding-top:2mm;font-size:7.4pt;color:var(--k-mut)}
 .k-foot ul{margin:.8mm 0 0;padding-left:3.4mm;display:grid;gap:.6mm}
 .k-foot b{color:var(--k-ink)}
 .k-sec{display:flex;flex-direction:column;gap:1.4mm}
@@ -238,7 +238,6 @@ function renderSheet(rec){
   const restSizes=offRest.reduce((a,r)=>a+sizeList(r).length,0);
   const d = new Date((rep.date||'')+'T00:00:00');
   const plural=(n,w)=>`${n} ${w}${n===1?'':'s'}`;
-  const bullets = k => { const s=sec(k); if(!s) return ''; return s.blocks.filter(b=>b.type==='list').flatMap(b=>b.items).map(x=>`<li>${inline(x)}</li>`).join(''); };
   let h=`<div class="sheet">
   <div class="k-mast"><div class="l"><span class="k-eyebrow">Carbontree · Shopify continue-selling check</span><h1>Daily stock report</h1></div>
   <div class="r"><b>${isNaN(d)?esc(rep.date||''):d.toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}</b>Window ${esc(rep.front.window||'next 7 days')}</div></div>
@@ -257,7 +256,7 @@ function renderSheet(rec){
   if(st.on.rows.length) h+=`<div class="k-sec"><div class="k-h">Switch ON <span>${plural(st.on.sizes,'size')}</span></div><table class="k-t"><thead><tr><th>Product</th><th>Sizes · stock</th><th>PO</th><th>ETA</th><th>Stage</th><th>Qty</th></tr></thead><tbody>${st.on.rows.map(r=>`<tr><td class="p">${esc(r.product)}</td><td class="n">${kSizes(r)}</td><td>${esc(r.po)}</td><td class="n">${esc(r.eta)}</td><td>${kTags(r.likely||r.stage)}</td><td class="n">${esc(r['po qty']||'')}</td></tr>`).join('')}</tbody></table></div>`;
   if(st.off.rows.length) h+=`<div class="k-sec"><div class="k-h">Switch OFF <span>${plural(st.off.sizes,'size')} · sorted by demand</span></div><table class="k-t"><thead><tr><th>Product</th><th>Sizes · stock</th><th>Sold 30d</th><th>Short</th><th>Next PO</th><th>Flag</th></tr></thead><tbody>${offMain.map(r=>`<tr><td class="p">${esc(r.product)}</td><td class="n">${kSizes(r)}</td><td class="n">${esc(r['sold 30d'])}</td><td class="n${num(r.short)>0?' k-neg':''}">${esc(r.short)}</td><td>${esc(r['next po'])}</td><td>${kTags(r.flag)}</td></tr>`).join('')}</tbody></table>${offRest.length?`<div class="k-more">+ ${plural(offRest.length,'more product')} (${restSizes} sizes) with under 3 sales in 30 days and no PO: ${offRest.map(r=>esc(r.product.replace(/ \(.*/,''))).filter((v,i,a)=>a.indexOf(v)===i).join(', ')}.</div>`:''}</div>`;
   if(st.watch.rows.length) h+=`<div class="k-sec"><div class="k-h">Watch <span>PO due but at risk</span></div><table class="k-t"><thead><tr><th>Product</th><th>Sizes · stock</th><th>PO</th><th>ETA</th><th>Stage</th><th>Risk</th></tr></thead><tbody>${st.watch.rows.map(r=>`<tr><td class="p">${esc(r.product)}</td><td class="n">${kSizes(r)}</td><td>${esc(r.po)}</td><td class="n">${esc(r.eta)}</td><td>${kTags(r.stage)}</td><td>${inline(r.risk||'')}</td></tr>`).join('')}</tbody></table></div>`;
-  h+=`<div class="k-foot"><div><b>Fabric</b><ul>${bullets('fabric')}</ul></div><div><b>Notes</b><ul>${bullets('notes')}</ul><div style="margin-top:1.4mm">Sources: ${esc(rep.front.sources||'Shopify, Zoho, Carbonwork')} · ${st.ok.products} products already set correctly.</div></div></div>
+  h+=`<div class="k-foot">Sources: ${esc(rep.front.sources||'Shopify, Zoho, Carbonwork')} · ${st.ok.products} products already set correctly.</div>
   </div>`;
   return h;
 }

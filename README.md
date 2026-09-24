@@ -35,7 +35,7 @@ The report finds both cases every morning so they can be fixed the same day.
 | Person | What they use it for |
 |---|---|
 | **Shantanu** | Uploads the day's report, reviews it and adds notes |
-| **Kabir** | Reviews the report with Shantanu through the day and adds notes |
+| **Kabir & Revathi** | Review the report with Shantanu through the day and add notes |
 | **Karan** | Reads a one-page printable summary |
 
 ### When
@@ -60,7 +60,7 @@ The report finds both cases every morning so they can be fixed the same day.
 
 ### Where it lives
 
-- **Stock Desk** (this app): report history by code and date, Shantanu / Kabir / Karan views, shared notes, consolidation.
+- **Stock Desk** (this app): report history by code and date, Shantanu / Kabir & Revathi / Karan views, shared notes, consolidation.
 - **Daily .md file:** `stock-report-YYYY-MM-DD.md`, uploaded to the page on the Shantanu tab.
 
 ### Related
@@ -217,7 +217,7 @@ The date comes from `date:` in the file's front matter (or `YYYY-MM-DD` in the f
 | Signed in as | Sees |
 |---|---|
 | `shantanu@carbontree.com` | Reports list with **upload**, **Consolidate**, the **Karan** print page, and the **Shantanu** and **Karan** tabs on each report. Can delete reports he uploaded. |
-| `kabir@carbontree.com` | Reports list (read-only) and the **Kabir** tab on each report. Can add notes. |
+| `kabir@carbontree.com`, `revathi@carbontree.com` | Reports list (read-only) and the **Kabir & Revathi** tab on each report. Can add notes and press Sync. |
 | Any other @carbontree.com account | A "No access yet" screen asking them to speak to shantanu@carbontree.com. |
 | Anyone else | Can't sign in (Google sign-in is limited to @carbontree.com). |
 
@@ -274,9 +274,9 @@ npm run deploy:rules -- --project stock-desk-001
 
 | Data | Read | Create | Update | Delete |
 |---|---|---|---|---|
-| `reports/{code}` | Shantanu, Kabir | Shantanu, only with the next code for that date, known fields only, server timestamp, himself as uploader | Nobody (reports are a record) | Shantanu, own uploads |
-| `reports/{code}/notes/{id}` | Shantanu, Kabir | Shantanu, Kabir, as themselves, on an existing report, ≤ 2,000 characters | Author, text only | Author |
-| `sync/state` | Shantanu, Kabir | Shantanu, Kabir, as themselves, server time | same as create | Nobody |
+| `reports/{code}` | Shantanu, Kabir, Revathi | Shantanu, only with the next code for that date, known fields only, server timestamp, himself as uploader | Nobody (reports are a record) | Shantanu, own uploads |
+| `reports/{code}/notes/{id}` | Shantanu, Kabir, Revathi | Shantanu, Kabir, Revathi, as themselves, on an existing report, ≤ 2,000 characters | Author, text only | Author |
+| `sync/state` | Shantanu, Kabir, Revathi | Shantanu, Kabir, Revathi, as themselves, server time | same as create | Nobody |
 | `counters/{DDMMYY}` | Shantanu | Only together with that date's `-01` report | Only +1, together with the matching report | Nobody |
 | Anything else | Nobody | Nobody | Nobody | Nobody |
 
