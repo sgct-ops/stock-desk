@@ -15,6 +15,7 @@ export default function Shell({ children }: { children: React.ReactNode }) {
           <nav className="nav" aria-label="Main">
             <Link href="/" aria-current={cur('/')}>Reports</Link>
             {role?.canConsolidate && <Link href="/consolidate/" aria-current={cur('/consolidate')}>Consolidate</Link>}
+            {role?.views.includes('karan') && <Link href="/karan/" aria-current={cur('/karan')}>Karan</Link>}
           </nav>
           <div className="who">
             {user?.photoURL && <img src={user.photoURL} alt="" referrerPolicy="no-referrer" />}

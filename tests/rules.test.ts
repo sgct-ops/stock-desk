@@ -6,7 +6,7 @@ import firebase from 'firebase/compat/app';
 import 'firebase/compat/firestore';
 
 const ts = () => firebase.firestore.FieldValue.serverTimestamp();
-const google = (email: string, verified = true) => ({ email, email_verified: verified, firebase: { sign_in_provider: 'google.com' } });
+const google = (email: string, verified = true) => ({ email, email_verified: verified, firebase: { sign_in_provider: 'google.com' as const } });
 const stats = { on: { products: 1, sizes: 6 }, off: { products: 6, sizes: 14 }, watch: { products: 2, sizes: 9 }, ok: { products: 3, sizes: 13 }, short: 9 };
 const report = (code: string, date: string, seq: number, uid: string, email: string) => ({
   code, date, seq, title: 'Stock report', md: '# report', fileName: 'r.md', stats, uploadedAt: ts(), uploadedBy: { uid, name: 'Shantanu', email },

@@ -184,6 +184,7 @@ Products are matched by **name**, not SKU: product line + colour + size.
 |---|---|
 | **Reports** (`/`) | Upload a report `.md` (Shantanu). Filter by date: Today, Last 5 / 7 / 30 days, or any From–To. See every report with its basket counts. |
 | **Report** (`/report/?code=240926-01`) | The report in the tabs your login allows (see below), shared notes, download the original `.md`, print Karan's one-page A4 sheet. |
+| **Karan** (`/karan/`) | Karan's one-page A4 summary for any report (latest by default), ready to print or save as PDF (Shantanu). |
 | **Consolidate** (`/consolidate/?from=…&to=…`) | Merge every report in a date range into **unique product + size** rows (Shantanu). Duplicates are removed; the latest report decides basket and stock. Shows days seen, first seen and basket history. Download the consolidated `.md` or print it for Karan. |
 
 ### Report codes
@@ -206,7 +207,7 @@ The date comes from `date:` in the file's front matter (or `YYYY-MM-DD` in the f
 
 | Signed in as | Sees |
 |---|---|
-| `shantanu@carbontree.com` | Reports list with **upload**, **Consolidate**, and the **Shantanu** and **Karan** tabs on each report. Can delete reports he uploaded. |
+| `shantanu@carbontree.com` | Reports list with **upload**, **Consolidate**, the **Karan** print page, and the **Shantanu** and **Karan** tabs on each report. Can delete reports he uploaded. |
 | `kabir@carbontree.com` | Reports list (read-only) and the **Kabir** tab on each report. Can add notes. |
 | Any other @carbontree.com account | A "No access yet" screen asking them to speak to shantanu@carbontree.com. |
 | Anyone else | Can't sign in (Google sign-in is limited to @carbontree.com). |
@@ -309,6 +310,7 @@ counters/{DDMMYY}           next
 app/page.tsx              Reports: upload, date filter, list
 app/report/page.tsx       One report: role-based tabs, notes, print
 app/consolidate/page.tsx  Date-range consolidation and export
+app/karan/page.tsx        Karan's A4 print summary
 components/Auth.tsx       Google sign-in, role lookup, "No access yet" screen
 lib/roles.ts              Who sees which tabs and actions
 lib/render.ts             Markdown parsing, screen report, Karan print sheet
