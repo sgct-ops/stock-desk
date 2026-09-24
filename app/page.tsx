@@ -4,6 +4,7 @@ import Link from 'next/link';
 import Shell from '@/components/Shell';
 import Upload from '@/components/Upload';
 import { useAuth } from '@/components/Auth';
+import { useSync } from '@/components/Sync';
 import DateRange, { presetRange, type Range } from '@/components/DateRange';
 import { watchReports } from '@/lib/reports';
 import { fmtDate } from '@/lib/render';
@@ -11,10 +12,12 @@ import type { Report } from '@/lib/types';
 
 export default function Home() {
   const { role } = useAuth();
+  const { tick } = useSync();
   const [range, setRange] = useState<Range>(() => presetRange(30));
   const [reports, setReports] = useState<Report[] | null>(null);
   const [err, setErr] = useState('');
-  useEffect(() => { setReports(null); setErr(''); return watchReports(range.from, range.to, setReports, () => setErr('Couldn’t load reports. Check your connection and refresh.')); }, [range.from, range.to]);
+  useEffect(() => { setReports(null); }, [range.from, range.to]);
+  useEffect(() => { setErr(''); return watchReports(range.from, range.to, setReports, () => setErr('Couldn’t load reports. Check your connection and refresh.')); }, [range.from, range.to, tick]);
   const days = reports ? new Set(reports.map((r) => r.date)).size : 0;
 
   return (

@@ -66,6 +66,13 @@ async function t(name: string, fn: () => Promise<unknown>) { await fn(); results
 
   await t('Shantanu deletes a report he uploaded', () => assertSucceeds(owner.doc('reports/240926-02').delete()));
   await t('next upload after a delete still gets a new number (240926-03)', () => assertSucceeds(upload(owner, '240926-03', '2026-09-24', 3, { next: 4 })));
+  const syncBy = (uid: string, name: string, email: string) => ({ at: ts(), by: { uid, name, email } });
+  await t('Kabir presses Sync', () => assertSucceeds(kabir.doc('sync/state').set(syncBy('u_kabir', 'Kabir', 'kabir@carbontree.com'))));
+  await t('Shantanu presses Sync', () => assertSucceeds(owner.doc('sync/state').set(syncBy('u_shantanu', 'Shantanu', 'shantanu@carbontree.com'))));
+  await t('both can read the sync state', () => assertSucceeds(kabir.doc('sync/state').get()));
+  await t('other accounts cannot Sync', () => assertFails(other.doc('sync/state').set(syncBy('u_other', 'P', 'priyanka@carbontree.com'))));
+  await t('Sync posing as someone else is refused', () => assertFails(kabir.doc('sync/state').set(syncBy('u_shantanu', 'Shantanu', 'shantanu@carbontree.com'))));
+  await t('only sync/state is allowed', () => assertFails(owner.doc('sync/other').set(syncBy('u_shantanu', 'Shantanu', 'shantanu@carbontree.com'))));
   await t('unknown collections are refused', () => assertFails(owner.doc('settings/x').set({ a: 1 })));
 
   await env.cleanup();

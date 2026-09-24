@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Shell from '@/components/Shell';
 import Notes from '@/components/Notes';
 import { useAuth } from '@/components/Auth';
+import { useSync } from '@/components/Sync';
 import { deleteReport, getReport } from '@/lib/reports';
 import { fmtDate, renderReport, renderSheet } from '@/lib/render';
 import { downloadText } from '@/lib/download';
@@ -21,6 +22,7 @@ function ReportPage() {
   const params = useSearchParams();
   const router = useRouter();
   const { user, role } = useAuth();
+  const { tick } = useSync();
   const VIEWS = ALL_VIEWS.filter((v) => role?.views.includes(v.id));
   const code = params.get('code') || '';
   const [rec, setRec] = useState<Report | null | undefined>(undefined);
@@ -28,7 +30,8 @@ function ReportPage() {
   const [confirmDel, setConfirmDel] = useState(false);
 
   useEffect(() => { const h = window.location.hash.slice(1) as View; if (VIEWS.some((v) => v.id === h)) setView(h); }, []);
-  useEffect(() => { setRec(undefined); if (code) getReport(code).then(setRec).catch(() => setRec(null)); else setRec(null); }, [code]);
+  useEffect(() => { setRec(undefined); }, [code]);
+  useEffect(() => { if (code) getReport(code).then(setRec).catch(() => setRec((r) => r ?? null)); else setRec(null); }, [code, tick]);
   const pick = (v: View) => { setView(v); history.replaceState(null, '', `?code=${code}#${v}`); };
 
   if (rec === undefined) return <p className="meta" style={{ paddingTop: 24 }}>Loading {code}…</p>;

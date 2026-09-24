@@ -6,3 +6,6 @@ out
 *.log
 next-env.d.ts
 _*.txt
+
+# Daily report files made by the stockdesk skill
+output/

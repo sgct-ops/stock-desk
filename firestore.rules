@@ -14,6 +14,7 @@ rules_version = '2';
 //   reports/{code}             code = DDMMYY-NN, immutable once created
 //   reports/{code}/notes/{id}  one note, editable/deletable by its author only
 //   counters/{DDMMYY}          { next } — the next -NN for that date
+//   sync/state                 { at, by } — last Sync press; open pages refresh when it changes
 // Everything not matched below is denied.
 // ─────────────────────────────────────────────────────────────────────────────
 service cloud.firestore {
@@ -101,6 +102,17 @@ service cloud.firestore {
           && request.resource.data.text.size() > 0 && request.resource.data.text.size() <= 2000;
         allow delete: if isMember() && resource.data.by.uid == request.auth.uid;
       }
+    }
+
+    // sync/state: pressing Sync on any page writes this; every open page refreshes when it changes.
+    match /sync/{id} {
+      allow read: if isMember();
+      allow create, update: if isMember()
+        && id == 'state'
+        && request.resource.data.keys().hasOnly(['at', 'by'])
+        && request.resource.data.at == request.time
+        && validPerson(request.resource.data.by);
+      allow delete: if false;
     }
 
     // counters/{DDMMYY}: moves up by exactly one, and only in the same write that

@@ -1,6 +1,6 @@
 'use client';
 import {
-  collection, doc, getDoc, getDocs, onSnapshot, orderBy, query, where, runTransaction,
+  collection, doc, getDoc, getDocFromServer, getDocs, getDocsFromServer, onSnapshot, orderBy, query, where, runTransaction,
   addDoc, deleteDoc, serverTimestamp, Timestamp, type Unsubscribe,
 } from 'firebase/firestore';
 import type { User } from 'firebase/auth';
@@ -52,7 +52,8 @@ export async function uploadReport(md: string, fileName: string, user: User): Pr
 }
 
 export async function getReport(code: string): Promise<Report | null> {
-  const s = await getDoc(doc(fbDb(), 'reports', code));
+  const ref = doc(fbDb(), 'reports', code);
+  const s = await getDocFromServer(ref).catch(() => getDoc(ref));
   return s.exists() ? fromDoc(s.id, s.data()) : null;
 }
 
@@ -68,7 +69,7 @@ export function watchReports(from: string, to: string, cb: (r: Report[]) => void
 
 export async function listReports(from: string, to: string): Promise<Report[]> {
   const q = query(collection(fbDb(), 'reports'), where('date', '>=', from), where('date', '<=', to), orderBy('date', 'asc'));
-  const snap = await getDocs(q);
+  const snap = await getDocsFromServer(q).catch(() => getDocs(q));
   return snap.docs.map((d) => fromDoc(d.id, d.data())).sort((a, b) => a.date.localeCompare(b.date) || a.seq - b.seq);
 }
 

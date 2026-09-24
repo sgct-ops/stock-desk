@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import Shell from '@/components/Shell';
 import { useAuth } from '@/components/Auth';
+import { useSync } from '@/components/Sync';
 import { watchReports } from '@/lib/reports';
 import { addDays, todayIso } from '@/lib/codes';
 import { fmtDate, renderSheet } from '@/lib/render';
@@ -12,6 +13,7 @@ import type { Report } from '@/lib/types';
 /** Karan's one-page A4 summary: pick a report (latest by default) and print it. */
 function Karan() {
   const params = useSearchParams();
+  const { tick } = useSync();
   const [reports, setReports] = useState<Report[] | null>(null);
   const [code, setCode] = useState<string>(params.get('code') || '');
   const [err, setErr] = useState('');
@@ -22,7 +24,7 @@ function Karan() {
       setReports(list);
       setCode((c) => (c && list.some((r) => r.code === c) ? c : list[0]?.code || ''));
     }, () => setErr('Couldn’t load reports. Check your connection and refresh.'));
-  }, []);
+  }, [tick]);
 
   const rec = reports?.find((r) => r.code === code) || null;
   const pick = (c: string) => { setCode(c); history.replaceState(null, '', `?code=${c}`); };

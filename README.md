@@ -187,6 +187,15 @@ Products are matched by **name**, not SKU: product line + colour + size.
 | **Karan** (`/karan/`) | Karan's one-page A4 summary for any report (latest by default), ready to print or save as PDF (Shantanu). |
 | **Consolidate** (`/consolidate/?from=…&to=…`) | Merge every report in a date range into **unique product + size** rows (Shantanu). Duplicates are removed; the latest report decides basket and stock. Shows days seen, first seen and basket history. Download the consolidated `.md` or print it for Karan. |
 
+### Sync
+
+Every page has a **Sync** button (top right) with the time it last synced.
+
+- **Auto-sync:** each page refreshes its reports when it opens and every **6 hours** after that (also when you come back to a tab that's been idle for 6+ hours).
+- **Sync button:** pressing it on any page, on Shantanu's or Kabir's login, refreshes that page *and* every other Stock Desk page open anywhere. It writes `sync/state` in Firestore, and every open page listens for it.
+- Notes are live all the time; Sync is for reports.
+- Sync reloads what's already in Stock Desk. It doesn't build a new report from Shopify, Zoho and Carbonwork; that's the `run stockdesk` skill.
+
 ### Report codes
 
 `DDMMYY-NN`: the report's date plus its upload number for that date.
@@ -267,6 +276,7 @@ npm run deploy:rules -- --project stock-desk-001
 |---|---|---|---|---|
 | `reports/{code}` | Shantanu, Kabir | Shantanu, only with the next code for that date, known fields only, server timestamp, himself as uploader | Nobody (reports are a record) | Shantanu, own uploads |
 | `reports/{code}/notes/{id}` | Shantanu, Kabir | Shantanu, Kabir, as themselves, on an existing report, ≤ 2,000 characters | Author, text only | Author |
+| `sync/state` | Shantanu, Kabir | Shantanu, Kabir, as themselves, server time | same as create | Nobody |
 | `counters/{DDMMYY}` | Shantanu | Only together with that date's `-01` report | Only +1, together with the matching report | Nobody |
 | Anything else | Nobody | Nobody | Nobody | Nobody |
 
@@ -312,6 +322,7 @@ app/report/page.tsx       One report: role-based tabs, notes, print
 app/consolidate/page.tsx  Date-range consolidation and export
 app/karan/page.tsx        Karan's A4 print summary
 components/Auth.tsx       Google sign-in, role lookup, "No access yet" screen
+components/Sync.tsx       Sync button, 6-hour auto-sync, shared sync broadcast
 lib/roles.ts              Who sees which tabs and actions
 lib/render.ts             Markdown parsing, screen report, Karan print sheet
 lib/consolidate.ts        Duplicate removal and consolidated .md

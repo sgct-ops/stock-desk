@@ -125,6 +125,7 @@ a{color:var(--accent)}
 .nav a{padding:8px 12px;border-radius:6px;text-decoration:none;color:var(--muted);font-weight:500}
 .nav a[aria-current="page"]{background:var(--soft);color:var(--ink)}
 .who{display:flex;align-items:center;gap:10px;margin-left:auto;font-size:13px;color:var(--muted)}
+.sync{display:flex;align-items:center;gap:8px}
 .who img{width:26px;height:26px;border-radius:50%}
 .page-h{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px 16px;padding-block:22px 6px}
 .page-h h1{font:750 clamp(22px,3vw,28px)/1.1 var(--display);margin:0;letter-spacing:-.015em}

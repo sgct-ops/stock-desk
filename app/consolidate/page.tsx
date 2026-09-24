@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import Shell from '@/components/Shell';
 import { useAuth } from '@/components/Auth';
+import { useSync } from '@/components/Sync';
 import DateRange, { presetRange, type Range } from '@/components/DateRange';
 import { listReports } from '@/lib/reports';
 import { consolidate, toMarkdown, BASKETS, type Basket, type Item } from '@/lib/consolidate';
@@ -23,6 +24,7 @@ function History({ it }: { it: Item }) {
 
 function Consolidate() {
   const params = useSearchParams();
+  const { tick } = useSync();
   const [range, setRange] = useState<Range>(() => {
     const f = params.get('from'), t = params.get('to');
     return f && t ? { from: f, to: t } : presetRange(5);
@@ -36,7 +38,7 @@ function Consolidate() {
     setReports(null); setErr('');
     history.replaceState(null, '', `?from=${range.from}&to=${range.to}`);
     listReports(range.from, range.to).then(setReports).catch(() => setErr('Couldn’t load reports for this range.'));
-  }, [range.from, range.to]);
+  }, [range.from, range.to, tick]);
 
   // When a date has several uploads, "latest per day" keeps only the last one (highest -NN).
   const used = useMemo(() => {

@@ -2,13 +2,14 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth, SignOut } from './Auth';
+import { SyncProvider, SyncButton } from './Sync';
 
 export default function Shell({ children }: { children: React.ReactNode }) {
   const path = usePathname() || '/';
   const { user, role } = useAuth();
   const cur = (p: string) => (p === '/' ? path === '/' : path.startsWith(p)) ? 'page' : undefined;
   return (
-    <>
+    <SyncProvider>
       <header className="top">
         <div className="top-in" style={{ alignItems: 'center' }}>
           <div className="brand"><Link href="/"><b>Stock Desk</b></Link><span>Continue-selling check · Carbontree</span></div>
@@ -18,6 +19,7 @@ export default function Shell({ children }: { children: React.ReactNode }) {
             {role?.views.includes('karan') && <Link href="/karan/" aria-current={cur('/karan')}>Karan</Link>}
           </nav>
           <div className="who">
+            <SyncButton />
             {user?.photoURL && <img src={user.photoURL} alt="" referrerPolicy="no-referrer" />}
             <span>{user?.displayName || user?.email}</span>
             <SignOut />
@@ -25,6 +27,6 @@ export default function Shell({ children }: { children: React.ReactNode }) {
         </div>
       </header>
       <main className="wrap">{children}</main>
-    </>
+    </SyncProvider>
   );
 }
