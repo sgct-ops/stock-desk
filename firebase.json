@@ -1,9 +1,4 @@
 {
   "firestore": { "rules": "firestore.rules", "indexes": "firestore.indexes.json" },
-  "hosting": {
-    "public": "out",
-    "cleanUrls": true,
-    "trailingSlash": true,
-    "ignore": ["firebase.json", "**/.*", "**/node_modules/**"]
-  }
+  "emulators": { "firestore": { "port": 8080 }, "ui": { "enabled": false }, "singleProjectMode": true }
 }

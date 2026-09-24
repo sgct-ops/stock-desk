@@ -1,29 +1,42 @@
 'use client';
 import { initializeApp, getApps, type FirebaseApp } from 'firebase/app';
-import { getAuth, GoogleAuthProvider } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
+import { getAuth, GoogleAuthProvider, type Auth } from 'firebase/auth';
+import { getFirestore, type Firestore } from 'firebase/firestore';
 
+// All Firebase settings come from environment variables (Vercel → Project → Settings →
+// Environment Variables, or .env.local for local dev). Nothing is hardcoded here.
+// Next.js needs each NEXT_PUBLIC_ variable written out in full so it can inline it at build time.
 const firebaseConfig = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY ?? 'AIzaSyA4x6quYAoBmrzYm6wyqBQDLlCEm8xE8Gk',
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN ?? 'stock-desk-001.firebaseapp.com',
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID ?? 'stock-desk-001',
-  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET ?? 'stock-desk-001.firebasestorage.app',
-  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID ?? '889320746497',
-  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID ?? '1:889320746497:web:215939d0556ea2387b5a00',
-  measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID ?? 'G-BT3NMJ0FSN',
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+  measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
 };
 
-export const ALLOWED_DOMAIN = process.env.NEXT_PUBLIC_ALLOWED_DOMAIN ?? 'carbontree.com';
+const missing = (['apiKey', 'authDomain', 'projectId', 'appId'] as const).filter((k) => !firebaseConfig[k]);
+if (missing.length && typeof window !== 'undefined') {
+  console.error(`Stock Desk: missing Firebase env variables for ${missing.join(', ')}. See .env.example.`);
+}
 
-export const app: FirebaseApp = getApps()[0] ?? initializeApp(firebaseConfig);
-export const auth = getAuth(app);
-export const db = getFirestore(app);
+export const ALLOWED_DOMAIN = process.env.NEXT_PUBLIC_ALLOWED_DOMAIN || 'carbontree.com';
+
+// Created on first use in the browser, so the build (which pre-renders pages) never needs the keys.
+let _app: FirebaseApp | null = null;
+function app(): FirebaseApp {
+  if (!_app) {
+    _app = getApps()[0] ?? initializeApp(firebaseConfig);
+    if (firebaseConfig.measurementId) {
+      import('firebase/analytics')
+        .then(async ({ getAnalytics, isSupported }) => { if (await isSupported()) getAnalytics(_app!); })
+        .catch(() => {});
+    }
+  }
+  return _app;
+}
+export const fbAuth = (): Auth => getAuth(app());
+export const fbDb = (): Firestore => getFirestore(app());
 export const googleProvider = new GoogleAuthProvider();
 googleProvider.setCustomParameters({ hd: ALLOWED_DOMAIN, prompt: 'select_account' });
-
-// Analytics only runs in a supporting browser; never block the app on it.
-if (typeof window !== 'undefined') {
-  import('firebase/analytics')
-    .then(async ({ getAnalytics, isSupported }) => { if (await isSupported()) getAnalytics(app); })
-    .catch(() => {});
-}

@@ -10,8 +10,8 @@ import { fmtDate, renderReport, renderSheet } from '@/lib/render';
 import { downloadText } from '@/lib/download';
 import type { Report } from '@/lib/types';
 
-type View = 'shantanu' | 'kabir' | 'karan';
-const VIEWS: { id: View; name: string; sub: string }[] = [
+import type { View } from '@/lib/roles';
+const ALL_VIEWS: { id: View; name: string; sub: string }[] = [
   { id: 'shantanu', name: 'Shantanu', sub: 'Review & notes' },
   { id: 'kabir', name: 'Kabir', sub: 'Review & notes' },
   { id: 'karan', name: 'Karan', sub: 'Print summary' },
@@ -20,10 +20,11 @@ const VIEWS: { id: View; name: string; sub: string }[] = [
 function ReportPage() {
   const params = useSearchParams();
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, role } = useAuth();
+  const VIEWS = ALL_VIEWS.filter((v) => role?.views.includes(v.id));
   const code = params.get('code') || '';
   const [rec, setRec] = useState<Report | null | undefined>(undefined);
-  const [view, setView] = useState<View>('shantanu');
+  const [view, setView] = useState<View>(role?.views[0] ?? 'kabir');
   const [confirmDel, setConfirmDel] = useState(false);
 
   useEffect(() => { const h = window.location.hash.slice(1) as View; if (VIEWS.some((v) => v.id === h)) setView(h); }, []);
@@ -49,12 +50,12 @@ function ReportPage() {
         <div className="row-actions">
           <button className="btn" type="button" onClick={() => downloadText(`stock-report-${rec.code}.md`, rec.md)}>Download .md</button>
           {view === 'karan' && <button className="btn primary" type="button" onClick={() => window.print()}>Print / Save as PDF</button>}
-          {user?.uid === rec.uploadedBy?.uid && (confirmDel
+          {role?.canDelete && user?.uid === rec.uploadedBy?.uid && (confirmDel
             ? <><button className="btn" type="button" style={{ color: 'var(--off)', borderColor: 'var(--off)' }} onClick={async () => { await deleteReport(rec.code); router.push('/'); }}>Delete {rec.code} for everyone</button><button className="btn" type="button" onClick={() => setConfirmDel(false)}>Keep it</button></>
             : <button className="btn" type="button" onClick={() => setConfirmDel(true)}>Delete</button>)}
         </div>
       </div>
-      {view !== 'karan' ? (
+      {!VIEWS.some((v) => v.id === view) ? null : view !== 'karan' ? (
         <div className="grid">
           <div dangerouslySetInnerHTML={{ __html: renderReport(rec) }} />
           <Notes code={rec.code} />

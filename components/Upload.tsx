@@ -6,14 +6,14 @@ import { useAuth } from './Auth';
 import type { Report } from '@/lib/types';
 
 export default function Upload() {
-  const { user } = useAuth();
+  const { user, role } = useAuth();
   const input = useRef<HTMLInputElement>(null);
   const [over, setOver] = useState(false);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<{ kind: 'good' | 'err'; text: string; rec?: Report } | null>(null);
 
   async function handle(file: File) {
-    if (!user) return;
+    if (!user || !role?.canUpload) return;
     if (!/\.(md|markdown|txt)$/i.test(file.name)) { setMsg({ kind: 'err', text: 'Choose the daily .md report file.' }); return; }
     setBusy(true); setMsg(null);
     try {
@@ -21,7 +21,7 @@ export default function Upload() {
       const rec = await uploadReport(md, file.name, user);
       setMsg({ kind: 'good', text: `Saved as ${rec.code}: ${rec.stats.on.sizes} to switch ON, ${rec.stats.off.sizes} to switch OFF, ${rec.stats.watch.sizes} to watch.`, rec });
     } catch (e: any) {
-      setMsg({ kind: 'err', text: e?.code === 'permission-denied' ? 'You don’t have permission to upload. Sign in with your @carbontree.com account.' : (e?.message || 'Upload didn’t save. Try again.') });
+      setMsg({ kind: 'err', text: e?.code === 'permission-denied' ? 'Only shantanu@carbontree.com can upload reports.' : (e?.message || 'Upload didn’t save. Try again.') });
     } finally { setBusy(false); }
   }
 

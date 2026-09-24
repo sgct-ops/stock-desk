@@ -4,7 +4,7 @@ import {
   addDoc, deleteDoc, serverTimestamp, Timestamp, type Unsubscribe,
 } from 'firebase/firestore';
 import type { User } from 'firebase/auth';
-import { db } from './firebase';
+import { fbDb } from './firebase';
 import { dayKey, makeCode } from './codes';
 import { parseMd, stats as reportStats } from './render';
 import type { Note, Person, Report } from './types';
@@ -35,8 +35,8 @@ export function checkReport(md: string, fileName: string): ParsedUpload {
 export async function uploadReport(md: string, fileName: string, user: User): Promise<Report> {
   const parsed = checkReport(md, fileName);
   const day = dayKey(parsed.date);
-  const counterRef = doc(db, 'counters', day);
-  return runTransaction(db, async (tx) => {
+  const counterRef = doc(fbDb(), 'counters', day);
+  return runTransaction(fbDb(), async (tx) => {
     const c = await tx.get(counterRef);
     const seq = c.exists() ? Number(c.data().next) : 1;
     if (seq > 99) throw new Error('This date already has 99 reports.');
@@ -46,19 +46,19 @@ export async function uploadReport(md: string, fileName: string, user: User): Pr
       uploadedAt: serverTimestamp(), uploadedBy: person(user),
     };
     tx.set(counterRef, { next: seq + 1 });
-    tx.set(doc(db, 'reports', code), rec);
+    tx.set(doc(fbDb(), 'reports', code), rec);
     return { ...rec, uploadedAt: Date.now() } as Report;
   });
 }
 
 export async function getReport(code: string): Promise<Report | null> {
-  const s = await getDoc(doc(db, 'reports', code));
+  const s = await getDoc(doc(fbDb(), 'reports', code));
   return s.exists() ? fromDoc(s.id, s.data()) : null;
 }
 
 /** Reports whose report date is within [from, to] (inclusive, YYYY-MM-DD), newest first. */
 export function watchReports(from: string, to: string, cb: (r: Report[]) => void, onErr: (e: Error) => void): Unsubscribe {
-  const q = query(collection(db, 'reports'), where('date', '>=', from), where('date', '<=', to), orderBy('date', 'desc'));
+  const q = query(collection(fbDb(), 'reports'), where('date', '>=', from), where('date', '<=', to), orderBy('date', 'desc'));
   return onSnapshot(q, (snap) => {
     const list = snap.docs.map((d) => fromDoc(d.id, d.data()));
     list.sort((a, b) => b.date.localeCompare(a.date) || b.seq - a.seq);
@@ -67,17 +67,17 @@ export function watchReports(from: string, to: string, cb: (r: Report[]) => void
 }
 
 export async function listReports(from: string, to: string): Promise<Report[]> {
-  const q = query(collection(db, 'reports'), where('date', '>=', from), where('date', '<=', to), orderBy('date', 'asc'));
+  const q = query(collection(fbDb(), 'reports'), where('date', '>=', from), where('date', '<=', to), orderBy('date', 'asc'));
   const snap = await getDocs(q);
   return snap.docs.map((d) => fromDoc(d.id, d.data())).sort((a, b) => a.date.localeCompare(b.date) || a.seq - b.seq);
 }
 
-export async function deleteReport(code: string) { await deleteDoc(doc(db, 'reports', code)); }
+export async function deleteReport(code: string) { await deleteDoc(doc(fbDb(), 'reports', code)); }
 
 export function watchNotes(code: string, cb: (n: Note[]) => void): Unsubscribe {
-  const q = query(collection(db, 'reports', code, 'notes'), orderBy('at', 'asc'));
+  const q = query(collection(fbDb(), 'reports', code, 'notes'), orderBy('at', 'asc'));
   return onSnapshot(q, (snap) => cb(snap.docs.map((d) => ({ id: d.id, ...(d.data() as any), at: ms(d.data().at) }))), () => cb([]));
 }
 export async function addNote(code: string, text: string, user: User) {
-  await addDoc(collection(db, 'reports', code, 'notes'), { text: text.slice(0, 2000), by: person(user), at: serverTimestamp() });
+  await addDoc(collection(fbDb(), 'reports', code, 'notes'), { text: text.slice(0, 2000), by: person(user), at: serverTimestamp() });
 }

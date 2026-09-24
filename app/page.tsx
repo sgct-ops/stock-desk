@@ -3,12 +3,14 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Shell from '@/components/Shell';
 import Upload from '@/components/Upload';
+import { useAuth } from '@/components/Auth';
 import DateRange, { presetRange, type Range } from '@/components/DateRange';
 import { watchReports } from '@/lib/reports';
 import { fmtDate } from '@/lib/render';
 import type { Report } from '@/lib/types';
 
 export default function Home() {
+  const { role } = useAuth();
   const [range, setRange] = useState<Range>(() => presetRange(30));
   const [reports, setReports] = useState<Report[] | null>(null);
   const [err, setErr] = useState('');
@@ -18,15 +20,15 @@ export default function Home() {
   return (
     <Shell>
       <div className="page-h"><h1>Reports</h1><span className="meta">Every uploaded report, by code and date</span></div>
-      <Upload />
+      {role?.canUpload && <Upload />}
       <DateRange value={range} onChange={setRange} />
       <div className="bar" style={{ paddingTop: 0 }}>
         <span className="meta">{reports ? `${reports.length} report${reports.length === 1 ? '' : 's'} across ${days} day${days === 1 ? '' : 's'}` : 'Loading…'}</span>
         <span className="spacer" />
-        {reports && reports.length > 1 && <Link className="btn" href={`/consolidate/?from=${range.from}&to=${range.to}`}>Consolidate these {reports.length}</Link>}
+        {role?.canConsolidate && reports && reports.length > 1 && <Link className="btn" href={`/consolidate/?from=${range.from}&to=${range.to}`}>Consolidate these {reports.length}</Link>}
       </div>
       {err && <div className="status err">{err}</div>}
-      {reports && !reports.length && <div className="empty"><h2>No reports in this range</h2><p>Pick a wider range, or upload a report above.</p></div>}
+      {reports && !reports.length && <div className="empty"><h2>No reports in this range</h2><p>{role?.canUpload ? 'Pick a wider range, or upload a report above.' : 'Pick a wider range. New reports appear here as soon as Shantanu uploads them.'}</p></div>}
       {reports && reports.length > 0 && (
         <div className="tbl-wrap list">
           <table>
@@ -34,7 +36,7 @@ export default function Home() {
             <tbody>
               {reports.map((r) => (
                 <tr key={r.code}>
-                  <td><Link className="code" href={`/report/?code=${r.code}`}>{r.code}</Link></td>
+                  <td><Link className="code" href={`/report/?code=${r.code}#${role?.views[0] ?? ''}`}>{r.code}</Link></td>
                   <td>{fmtDate(r.date)}</td>
                   <td><div className="counts">
                     <span className="cnt on" title="Switch ON">ON {r.stats.on.sizes}</span>

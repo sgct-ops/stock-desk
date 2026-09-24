@@ -3,6 +3,7 @@ import { Suspense, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import Shell from '@/components/Shell';
+import { useAuth } from '@/components/Auth';
 import DateRange, { presetRange, type Range } from '@/components/DateRange';
 import { listReports } from '@/lib/reports';
 import { consolidate, toMarkdown, BASKETS, type Basket, type Item } from '@/lib/consolidate';
@@ -106,6 +107,12 @@ function Consolidate() {
   );
 }
 
+function Guard() {
+  const { role } = useAuth();
+  if (!role?.canConsolidate) return <div className="empty" style={{ marginTop: 24 }}><h2>Consolidation is for Shantanu only</h2><p><Link href="/">Back to reports</Link></p></div>;
+  return <Consolidate />;
+}
+
 export default function Page() {
-  return <Shell><Suspense fallback={<p className="meta">Loading…</p>}><Consolidate /></Suspense></Shell>;
+  return <Shell><Suspense fallback={<p className="meta">Loading…</p>}><Guard /></Suspense></Shell>;
 }
