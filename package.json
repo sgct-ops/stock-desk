@@ -1,0 +1,27 @@
+{
+  "name": "stock-desk",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Carbontree daily continue-selling stock reports: upload, track by code and date, consolidate, print.",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "npx serve out",
+    "lint": "next lint",
+    "deploy": "next build && firebase deploy",
+    "test": "tsx tests/consolidate.test.ts"
+  },
+  "dependencies": {
+    "firebase": "^11.0.0",
+    "next": "^15.0.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "tsx": "^4.23.15",
+    "typescript": "^5.6.0"
+  }
+}
