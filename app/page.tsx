@@ -1,5 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { karanOnly } from '@/lib/roles';
 import Link from 'next/link';
 import Shell from '@/components/Shell';
 import Upload from '@/components/Upload';
@@ -12,6 +14,8 @@ import type { Report } from '@/lib/types';
 
 export default function Home() {
   const { role } = useAuth();
+  const router = useRouter();
+  useEffect(() => { if (karanOnly(role)) router.replace('/karan/'); }, [role, router]);
   const { tick } = useSync();
   const [range, setRange] = useState<Range>(() => presetRange(30));
   const [reports, setReports] = useState<Report[] | null>(null);

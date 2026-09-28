@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth, SignOut } from './Auth';
 import { SyncProvider, SyncButton } from './Sync';
+import { karanOnly } from '@/lib/roles';
 
 export default function Shell({ children }: { children: React.ReactNode }) {
   const path = usePathname() || '/';
@@ -14,12 +15,12 @@ export default function Shell({ children }: { children: React.ReactNode }) {
         <div className="top-in" style={{ alignItems: 'center' }}>
           <div className="brand"><Link href="/"><b>Stock Desk</b></Link><span>Continue-selling check · Carbontree</span></div>
           <nav className="nav" aria-label="Main">
-            <Link href="/" aria-current={cur('/')}>Reports</Link>
+            {!karanOnly(role) && <Link href="/" aria-current={cur('/')}>Reports</Link>}
             {role?.canConsolidate && <Link href="/consolidate/" aria-current={cur('/consolidate')}>Consolidate</Link>}
-            {role?.views.includes('karan') && <Link href="/karan/" aria-current={cur('/karan')}>Karan</Link>}
+            {role?.views.includes('karan') && <Link href="/karan/" aria-current={cur('/karan')}>{karanOnly(role) ? 'Daily report' : 'Karan'}</Link>}
           </nav>
           <div className="who">
-            <SyncButton />
+            {role?.canSync && <SyncButton />}
             {user?.photoURL && <img src={user.photoURL} alt="" referrerPolicy="no-referrer" />}
             <span>{user?.displayName || user?.email}</span>
             <SignOut />

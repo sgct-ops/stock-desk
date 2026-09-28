@@ -225,6 +225,7 @@ The date comes from `date:` in the file's front matter (or `YYYY-MM-DD` in the f
 |---|---|
 | `shantanu@carbontree.com` | Reports list with **upload**, **Consolidate**, the **Karan** print page, and the **Shantanu** and **Karan** tabs on each report. Can delete reports he uploaded. |
 | `kabir@carbontree.com`, `revathi@carbontree.com` | Reports list (read-only) and the **Kabir & Revathi** tab on each report. Can add notes and press Sync. |
+| `contact@carbontree.com` | Only the daily report print page (Karan's one-page summary): pick any report from the last 90 days, view it, and Print / Save as PDF. No Reports list, notes, Sync or .md download. |
 | Any other @carbontree.com account | A "No access yet" screen asking them to speak to shantanu@carbontree.com. |
 | Anyone else | Can't sign in (Google sign-in is limited to @carbontree.com). |
 
@@ -281,9 +282,9 @@ npm run deploy:rules -- --project stock-desk-001
 
 | Data | Read | Create | Update | Delete |
 |---|---|---|---|---|
-| `reports/{code}` | Shantanu, Kabir, Revathi | Shantanu, only with the next code for that date, known fields only, server timestamp, himself as uploader | Nobody (reports are a record) | Shantanu, own uploads |
+| `reports/{code}` | Shantanu, Kabir, Revathi, contact@ | Shantanu, only with the next code for that date, known fields only, server timestamp, himself as uploader | Nobody (reports are a record) | Shantanu, own uploads |
 | `reports/{code}/notes/{id}` | Shantanu, Kabir, Revathi | Shantanu, Kabir, Revathi, as themselves, on an existing report, ≤ 2,000 characters | Author, text only | Author |
-| `sync/state` | Shantanu, Kabir, Revathi | Shantanu, Kabir, Revathi, as themselves, server time | same as create | Nobody |
+| `sync/state` | Shantanu, Kabir, Revathi, contact@ | Shantanu, Kabir, Revathi, as themselves, server time | same as create | Nobody |
 | `counters/{DDMMYY}` | Shantanu | Only together with that date's `-01` report | Only +1, together with the matching report | Nobody |
 | Anything else | Nobody | Nobody | Nobody | Nobody |
 

@@ -51,7 +51,7 @@ function ReportPage() {
         </nav>
         <span className="spacer" />
         <div className="row-actions">
-          <button className="btn" type="button" onClick={() => downloadText(`stock-report-${rec.code}.md`, rec.md)}>Download .md</button>
+          {role?.canDownloadMd && <button className="btn" type="button" onClick={() => downloadText(`stock-report-${rec.code}.md`, rec.md)}>Download .md</button>}
           {view === 'karan' && <button className="btn primary" type="button" onClick={() => window.print()}>Print / Save as PDF</button>}
           {role?.canDelete && user?.uid === rec.uploadedBy?.uid && (confirmDel
             ? <><button className="btn" type="button" style={{ color: 'var(--off)', borderColor: 'var(--off)' }} onClick={async () => { await deleteReport(rec.code); router.push('/'); }}>Delete {rec.code} for everyone</button><button className="btn" type="button" onClick={() => setConfirmDel(false)}>Keep it</button></>
@@ -61,7 +61,7 @@ function ReportPage() {
       {!VIEWS.some((v) => v.id === view) ? null : view !== 'karan' ? (
         <div className="grid">
           <div dangerouslySetInnerHTML={{ __html: renderReport(rec) }} />
-          <Notes code={rec.code} />
+          {role?.canNotes && <Notes code={rec.code} />}
         </div>
       ) : (
         <>
